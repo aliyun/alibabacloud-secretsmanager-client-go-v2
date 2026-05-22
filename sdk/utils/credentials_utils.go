@@ -3,8 +3,10 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
+	mauthconfig "github.com/aliyun/alibabacloud-secretsmanager-client-go-v2/sdk/mauth/config"
 	"github.com/aliyun/alibabacloud-secretsmanager-client-go-v2/sdk/models"
 	"github.com/aliyun/credentials-go/credentials"
+	"os"
 	"strconv"
 )
 
@@ -114,7 +116,7 @@ func InitCredential(configMap map[string]string, sourceTypeName string) (credent
 	}
 
 	switch credentialsType {
-	case "ak":
+	case VariableCredentialsTypeAccessKey:
 		accessKeyId, exists := configMap[VariableCredentialsAccessKeyIdKey]
 		if !exists || accessKeyId == "" {
 			return nil, fmt.Errorf(CheckParamErrorMessage, sourceTypeName, VariableCredentialsAccessKeyIdKey)
@@ -126,14 +128,14 @@ func InitCredential(configMap map[string]string, sourceTypeName string) (credent
 		}
 		return CredentialsWithAccessKey(accessKeyId, accessSecret)
 
-	case "ecs_ram_role":
+	case VariableCredentialsTypeEcsRamRole:
 		roleName, exists := configMap[VariableCredentialsRoleNameKey]
 		if !exists || roleName == "" {
 			return nil, fmt.Errorf(CheckParamErrorMessage, sourceTypeName, VariableCredentialsRoleNameKey)
 		}
 		return CredentialsWithEcsRamRole(roleName)
 
-	case "oidc_role_arn":
+	case VariableCredentialsTypeOidcRoleArn:
 		var roleSessionExpiration int
 		if durationStr, exists := configMap[VariableCredentialsOidcDurationSecondsKey]; exists && durationStr != "" {
 			if duration, err := strconv.Atoi(durationStr); err == nil {
@@ -147,7 +149,71 @@ func InitCredential(configMap map[string]string, sourceTypeName string) (credent
 		policy := configMap[VariableCredentialsOidcPolicyKey]
 		stsEndpoint := configMap[VariableCredentialsOidcStsEndpointKey]
 		return CredentialsWithOIDCRoleArn(roleArn, oidcProviderArn, oidcTokenFilePath, roleSessionName, policy, stsEndpoint, roleSessionExpiration)
+
+	case VariableCredentialsTypeClientKey, VariableCredentialsTypeAckOidcJwt, VariableCredentialsTypeEcsInstanceIdentity:
+		// mauth 认证方式，不创建 credentials.Credential，由 InitMAuthConfig 负责解析配置
+		return nil, nil
+
 	default:
 		return nil, fmt.Errorf("%s credentials type[%s] is illegal", sourceTypeName, credentialsType)
 	}
+}
+
+// InitMAuthConfig 初始化mauth认证配置
+//
+// @param configMap 配置映射
+// @param sourceTypeName 来源类型名称
+// @return mauth认证配置
+func InitMAuthConfig(configMap map[string]string, sourceTypeName string) (*mauthconfig.AuthConfig, error) {
+	credentialsType, exists := configMap[VariableCredentialsTypeKey]
+	if !exists || credentialsType == "" {
+		return nil, nil
+	}
+
+	var authMethod string
+	switch credentialsType {
+	case VariableCredentialsTypeClientKey:
+		authMethod = mauthconfig.ClientKey
+	case VariableCredentialsTypeAckOidcJwt:
+		authMethod = mauthconfig.ACKOidcJwt
+	case VariableCredentialsTypeEcsInstanceIdentity:
+		authMethod = mauthconfig.ECSInstanceIdentity
+	default:
+		return nil, nil
+	}
+
+	clientKeyPassword := configMap[VariableCredentialsClientKeyPasswordKey]
+	clientKeyPasswordEnvName := configMap[VariableCredentialsClientKeyPasswordEnvNameKey]
+	if clientKeyPasswordEnvName != "" {
+		clientKeyPassword = os.Getenv(clientKeyPasswordEnvName)
+	}
+
+	cfg := &mauthconfig.AuthConfig{
+		AuthMethod:            authMethod,
+		AapArn:                configMap[VariableCredentialsAapArnKey],
+		TokenPath:             configMap[VariableCredentialsTokenPathKey],
+		ClientKeyConfigPath:   configMap[VariableCredentialsClientKeyConfigPathKey],
+		ClientKeyPassword:     clientKeyPassword,
+		ClientKeyPasswordPath: configMap[VariableCredentialsClientKeyPasswordPathKey],
+	}
+
+	switch authMethod {
+	case mauthconfig.ACKOidcJwt:
+		if cfg.AapArn == "" {
+			return nil, fmt.Errorf(CheckParamErrorMessage, sourceTypeName, VariableCredentialsAapArnKey)
+		}
+	case mauthconfig.ECSInstanceIdentity:
+		if cfg.AapArn == "" {
+			return nil, fmt.Errorf(CheckParamErrorMessage, sourceTypeName, VariableCredentialsAapArnKey)
+		}
+	case mauthconfig.ClientKey:
+		if cfg.ClientKeyConfigPath == "" {
+			return nil, fmt.Errorf(CheckParamErrorMessage, sourceTypeName, VariableCredentialsClientKeyConfigPathKey)
+		}
+		if cfg.ClientKeyPassword == "" && cfg.ClientKeyPasswordPath == "" {
+			return nil, fmt.Errorf("%s credentials missing required parameters[%s or %s]", sourceTypeName, VariableCredentialsClientKeyPasswordEnvNameKey, VariableCredentialsClientKeyPasswordPathKey)
+		}
+	}
+
+	return cfg, nil
 }

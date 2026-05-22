@@ -16,6 +16,8 @@ import (
 	kms20160120 "github.com/alibabacloud-go/kms-20160120/v3/client"
 	"github.com/alibabacloud-go/tea/tea"
 	"github.com/aliyun/alibabacloud-secretsmanager-client-go-v2/sdk/logger"
+	"github.com/aliyun/alibabacloud-secretsmanager-client-go-v2/sdk/mauth"
+	mauthconfig "github.com/aliyun/alibabacloud-secretsmanager-client-go-v2/sdk/mauth/config"
 	"github.com/aliyun/alibabacloud-secretsmanager-client-go-v2/sdk/models"
 	"github.com/aliyun/alibabacloud-secretsmanager-client-go-v2/sdk/utils"
 )
@@ -47,14 +49,16 @@ type DefaultSecretManagerClientBuilder struct {
 	backoffStrategy  BackoffStrategy                            // 退避策略
 	configMap        map[*models.RegionInfo]*openapiutil.Config // 地域配置映射
 	customConfigFile string                                     // 自定义配置文件路径
+	mauthConfig      *mauthconfig.AuthConfig                    // mauth认证配置
 }
 
 // defaultSecretManagerClient 是默认的SecretManager客户端实现
 // 实现了SecretManagerClient接口的所有方法
 type defaultSecretManagerClient struct {
 	*DefaultSecretManagerClientBuilder
-	clientMap map[*models.RegionInfo]*kms20160120.Client // KMS客户端映射
-	clientMtx sync.Mutex                                 // 客户端访问互斥锁
+	clientMap     map[*models.RegionInfo]*kms20160120.Client // KMS客户端映射
+	clientMtx     sync.Mutex                                 // 客户端访问互斥锁
+	bearerClients map[string]*secretManagerClientWithBearer  // 以regionId为key的bearer认证客户端
 }
 
 func NewBaseSecretManagerClientBuilder() *BaseSecretManagerClientBuilder {
@@ -141,6 +145,43 @@ func (dsb *DefaultSecretManagerClientBuilder) WithCustomConfigFile(customConfigF
 	return dsb
 }
 
+// WithClientKey 使用ClientKey配置认证信息
+// 参数clientKeyConfigPath为客户端密钥配置文件路径
+// 参数clientKeyPasswordPath为客户端密钥密码文件路径
+// 返回构建器本身以支持链式调用
+func (dsb *DefaultSecretManagerClientBuilder) WithClientKey(clientKeyConfigPath, clientKeyPasswordPath string) *DefaultSecretManagerClientBuilder {
+	dsb.mauthConfig = &mauthconfig.AuthConfig{
+		AuthMethod:            mauthconfig.ClientKey,
+		ClientKeyConfigPath:   clientKeyConfigPath,
+		ClientKeyPasswordPath: clientKeyPasswordPath,
+	}
+	return dsb
+}
+
+// WithACKOidcJwt 使用ACK OIDC JWT配置认证信息
+// 参数aapArn为应用访问点ARN
+// 参数tokenPath为OIDC令牌文件路径
+// 返回构建器本身以支持链式调用
+func (dsb *DefaultSecretManagerClientBuilder) WithACKOidcJwt(aapArn, tokenPath string) *DefaultSecretManagerClientBuilder {
+	dsb.mauthConfig = &mauthconfig.AuthConfig{
+		AuthMethod: mauthconfig.ACKOidcJwt,
+		AapArn:     aapArn,
+		TokenPath:  tokenPath,
+	}
+	return dsb
+}
+
+// WithECSInstanceIdentity 使用ECS实例身份配置认证信息
+// 参数aapArn为应用访问点ARN
+// 返回构建器本身以支持链式调用
+func (dsb *DefaultSecretManagerClientBuilder) WithECSInstanceIdentity(aapArn string) *DefaultSecretManagerClientBuilder {
+	dsb.mauthConfig = &mauthconfig.AuthConfig{
+		AuthMethod: mauthconfig.ECSInstanceIdentity,
+		AapArn:     aapArn,
+	}
+	return dsb
+}
+
 // Build 构建SecretManager客户端
 // 根据已设置的配置参数创建并返回SecretManagerClient实例
 // 返回实现SecretManagerClient接口的对象
@@ -190,7 +231,6 @@ func (dsb *DefaultSecretManagerClientBuilder) sortRegionInfos(regionInfos []*mod
 		}(&wg)
 	}
 	wg.Wait()
-	// 注意>go1.8才有sort.Slice
 	sort.Slice(regionInfoExtends, func(i, j int) bool {
 		return regionInfoExtends[i].Elapsed < regionInfoExtends[j].Elapsed
 	})
@@ -219,6 +259,29 @@ func (dmc *defaultSecretManagerClient) Init() error {
 	err = dmc.backoffStrategy.Init()
 	if err != nil {
 		return err
+	}
+
+	if dmc.mauthConfig != nil {
+		dmc.bearerClients = make(map[string]*secretManagerClientWithBearer)
+		for _, regionInfo := range dmc.regionInfos {
+			mauthCfg := *dmc.mauthConfig
+			if mauthCfg.KmsEndpoint == "" {
+				endpoint, ca, err := resolveEndpointAndCa(regionInfo)
+				if err != nil {
+					return fmt.Errorf("failed to resolve endpoint and ca for region[%s]: %w", regionInfo.RegionId, err)
+				}
+				mauthCfg.KmsEndpoint = endpoint
+				if mauthCfg.Ca == "" {
+					mauthCfg.Ca = ca
+				}
+			}
+			mauthObj, err := mauth.NewMAuth(mauthCfg, logger.GetCommonLogger(utils.ModeName))
+			if err != nil {
+				return fmt.Errorf("failed to init mauth for region[%s]: %w", regionInfo.RegionId, err)
+			}
+			dmc.bearerClients[regionInfo.RegionId] = newSecretManagerClientWithBearer(mauthObj)
+		}
+		return nil
 	}
 	if dmc.regionInfos != nil && len(dmc.regionInfos) > 1 {
 		dmc.regionInfos = dmc.sortRegionInfos(dmc.regionInfos)
@@ -287,10 +350,53 @@ func (dmc *defaultSecretManagerClient) GetSecretValue(req *kms20160120.GetSecret
 }
 
 func (dmc *defaultSecretManagerClient) Close() error {
+	for _, bc := range dmc.bearerClients {
+		if bc.mauth != nil {
+			bc.mauth.Close()
+		}
+	}
 	return nil
 }
 
+func resolveEndpoint(regionInfo *models.RegionInfo) string {
+	if regionInfo.Endpoint != "" {
+		return regionInfo.Endpoint
+	} else if regionInfo.Vpc {
+		return utils.GetVpcEndpoint(regionInfo.RegionId)
+	}
+	return utils.GetEndpoint(regionInfo.RegionId)
+}
+
+func resolveCa(regionInfo *models.RegionInfo) (string, error) {
+	if regionInfo.CaFilePath != "" {
+		content, err := ioutil.ReadFile(regionInfo.CaFilePath)
+		if err != nil {
+			return "", err
+		}
+		return string(content), nil
+	}
+	caContent, exists := utils.RegionIdAndCaMap[regionInfo.RegionId]
+	if !exists {
+		return "", fmt.Errorf("cannot find the built-in ca certificate for region[%s], please provide the caFilePath parameter", regionInfo.RegionId)
+	}
+	return caContent, nil
+}
+
+func resolveEndpointAndCa(regionInfo *models.RegionInfo) (endpoint string, ca string, err error) {
+	endpoint = resolveEndpoint(regionInfo)
+	if strings.HasSuffix(endpoint, utils.InstanceGatewayDomainSuffix) {
+		ca, err = resolveCa(regionInfo)
+		if err != nil {
+			return "", "", err
+		}
+	}
+	return endpoint, ca, nil
+}
+
 func (dmc *defaultSecretManagerClient) getSecretValue(regionInfo *models.RegionInfo, req *kms20160120.GetSecretValueRequest) (*kms20160120.GetSecretValueResponse, error) {
+	if bc, ok := dmc.bearerClients[regionInfo.RegionId]; ok {
+		return bc.getSecretValue(regionInfo, req)
+	}
 	client, err := dmc.getClient(regionInfo)
 	if err != nil {
 		return nil, err
@@ -319,27 +425,13 @@ func (dmc *defaultSecretManagerClient) buildKmsClient(regionInfo *models.RegionI
 	config := dmc.configMap[regionInfo]
 	if config == nil {
 		config = &openapiutil.Config{}
-		if regionInfo.Endpoint != "" {
-			config.SetEndpoint(regionInfo.Endpoint)
-			if strings.HasSuffix(regionInfo.Endpoint, utils.InstanceGatewayDomainSuffix) {
-				if regionInfo.CaFilePath != "" {
-					content, err := ioutil.ReadFile(regionInfo.CaFilePath)
-					if err != nil {
-						return nil, err
-					}
-					config.SetCa(string(content))
-				} else {
-					caContent, exists := utils.RegionIdAndCaMap[regionInfo.RegionId]
-					if !exists {
-						return nil, fmt.Errorf("cannot find the built-in ca certificate for region[%s], please provide the caFilePath parameter", regionInfo.RegionId)
-					}
-					config.SetCa(caContent)
-				}
-			}
-		} else if regionInfo.Vpc {
-			config.SetEndpoint(utils.GetVpcEndpoint(regionInfo.RegionId))
-		} else {
-			config.SetEndpoint(utils.GetEndpoint(regionInfo.RegionId))
+		endpoint, ca, err := resolveEndpointAndCa(regionInfo)
+		if err != nil {
+			return nil, err
+		}
+		config.SetEndpoint(endpoint)
+		if ca != "" {
+			config.SetCa(ca)
 		}
 		if dmc.credential == nil {
 			credential, err := credentials.NewCredential(nil)
@@ -369,6 +461,9 @@ func (dmc *defaultSecretManagerClient) initFromConfigFile() error {
 			dmc.credential = credentialsProperties.Credential
 		}
 		dmc.regionInfos = append(dmc.regionInfos, credentialsProperties.RegionInfoSlice...)
+		if err := dmc.initMAuthConfig(credentialsProperties.SourceProperties, utils.SourceTypeConfig); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -387,6 +482,20 @@ func (dmc *defaultSecretManagerClient) initFromEnv() error {
 		return err
 	}
 	dmc.regionInfos = append(dmc.regionInfos, regionInfos...)
+	if err := dmc.initMAuthConfig(envMap, utils.SourceTypeEnv); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (dmc *defaultSecretManagerClient) initMAuthConfig(properties map[string]string, sourceType string) error {
+	if dmc.mauthConfig == nil {
+		mauthCfg, err := utils.InitMAuthConfig(properties, sourceType)
+		if err != nil {
+			return err
+		}
+		dmc.mauthConfig = mauthCfg
+	}
 	return nil
 }
 

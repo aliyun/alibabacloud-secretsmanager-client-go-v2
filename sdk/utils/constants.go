@@ -22,9 +22,6 @@ const (
 	// RequestWaitingTime 请求等待时间(毫秒)
 	RequestWaitingTime = 2 * 60 * 1000
 
-	// MonitorInterval 监控间隔时间(毫秒)
-	MonitorInterval = 5 * 60 * 1000
-
 	// DefaultProtocol 默认协议
 	DefaultProtocol = "https"
 
@@ -42,6 +39,24 @@ const (
 
 	// VariableCredentialsTypeKey 凭据类型配置键名
 	VariableCredentialsTypeKey = "credentials_type"
+
+	// VariableCredentialsTypeAccessKey AccessKey 凭据类型值
+	VariableCredentialsTypeAccessKey = "ak"
+
+	// VariableCredentialsTypeEcsRamRole ECS RAM Role 凭据类型值
+	VariableCredentialsTypeEcsRamRole = "ecs_ram_role"
+
+	// VariableCredentialsTypeOidcRoleArn OIDC Role ARN 凭据类型值
+	VariableCredentialsTypeOidcRoleArn = "oidc_role_arn"
+
+	// VariableCredentialsTypeClientKey mauth ClientKey 凭据类型值
+	VariableCredentialsTypeClientKey = "client_key"
+
+	// VariableCredentialsTypeAckOidcJwt mauth ACK OIDC JWT 凭据类型值
+	VariableCredentialsTypeAckOidcJwt = "ack_oidc_jwt"
+
+	// VariableCredentialsTypeEcsInstanceIdentity mauth ECS Instance Identity 凭据类型值
+	VariableCredentialsTypeEcsInstanceIdentity = "ecs_instance_identity"
 
 	// VariableCredentialsAccessKeyIdKey AccessKey ID配置键名
 	VariableCredentialsAccessKeyIdKey = "credentials_access_key_id"
@@ -85,6 +100,24 @@ const (
 	// VariableRegionCaFilePathNameKey CA文件路径配置键名
 	VariableRegionCaFilePathNameKey = "caFilePath"
 
+	// VariableCredentialsAapArnKey mauth AAP ARN配置键名
+	VariableCredentialsAapArnKey = "aap_arn"
+
+	// VariableCredentialsTokenPathKey mauth令牌路径配置键名
+	VariableCredentialsTokenPathKey = "token_path"
+
+	// VariableCredentialsClientKeyConfigPathKey mauth ClientKey配置文件路径配置键名
+	VariableCredentialsClientKeyConfigPathKey = "client_key_private_key_path"
+
+	// VariableCredentialsClientKeyPasswordKey mauth ClientKey密码配置键名
+	VariableCredentialsClientKeyPasswordKey = "client_key_password"
+
+	// VariableCredentialsClientKeyPasswordEnvNameKey mauth ClientKey密码环境变量名称配置键名
+	VariableCredentialsClientKeyPasswordEnvNameKey = "client_key_password_from_env_variable"
+
+	// VariableCredentialsClientKeyPasswordPathKey mauth ClientKey密码文件路径配置键名
+	VariableCredentialsClientKeyPasswordPathKey = "client_key_password_from_file_path"
+
 	// TextDataType 凭据文本数据类型
 	TextDataType = "text"
 
@@ -95,7 +128,7 @@ const (
 	ModeName = "SecretsManagerClientV2"
 
 	// ProjectVersion 项目版本
-	ProjectVersion = "2.0.0"
+	ProjectVersion = "2.0.1"
 
 	// CredentialsPropertiesConfigName 凭据配置文件名称
 	CredentialsPropertiesConfigName = "secretsmanager.properties"
@@ -105,6 +138,9 @@ const (
 
 	// SourceTypeEnv 环境变量来源类型标识
 	SourceTypeEnv = "env"
+
+	// ErrorCodeInvalidAccessKeyIdNotFound 无效的AccessKeyId错误码
+	ErrorCodeInvalidAccessKeyIdNotFound = "InvalidAccessKeyId.NotFound"
 
 	// CheckParamErrorMessage 凭据参数缺失错误信息模板
 	CheckParamErrorMessage = "%s credentials missing required parameters[%s]"
