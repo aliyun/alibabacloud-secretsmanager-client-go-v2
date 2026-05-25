@@ -103,6 +103,22 @@ func (d DefaultLogger) Errorf(format string, params ...interface{}) {
 	d.logger.Printf(f, params...)
 }
 
+func (cl *CommonLogger) Debug(format string, params ...interface{}) {
+	cl.wrapper.Debugf(cl.parseExceptionErrorMsg(format, params...), params...)
+}
+
+func (cl *CommonLogger) Info(format string, params ...interface{}) {
+	cl.wrapper.Infof(cl.parseExceptionErrorMsg(format, params...), params...)
+}
+
+func (cl *CommonLogger) Warn(format string, params ...interface{}) {
+	cl.wrapper.Warnf(cl.parseExceptionErrorMsg(format, params...), params...)
+}
+
+func (cl *CommonLogger) Error(format string, params ...interface{}) {
+	cl.wrapper.Errorf(cl.parseExceptionErrorMsg(format, params...), params...)
+}
+
 func (cl *CommonLogger) Flush() {
 	cl.wrapper.Flush()
 }

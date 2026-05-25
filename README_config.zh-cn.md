@@ -46,3 +46,48 @@ cache_client_region_id=[{"regionId":"<regionId>"}]
 # 访问KMS实例网关时，使用如下配置
 # cache_client_region_id=[{"regionId":"<regionId>","endpoint":"<you kms instanceId>.cryptoservice.kms.aliyuncs.com"}]
 ```
+
+4. 采用mauth ECS Instance Identity作为访问鉴权方式
+
+```properties
+# 访问凭据类型
+credentials_type=ecs_instance_identity
+# AAP ARN
+aap_arn=<aap arn>
+# 关联的KMS服务地域
+cache_client_region_id=[{"regionId":"<regionId>"}]
+# 访问KMS实例网关时，使用如下配置
+# cache_client_region_id=[{"regionId":"<regionId>","endpoint":"<you kms instanceId>.cryptoservice.kms.aliyuncs.com"}]
+```
+
+5. 采用mauth ACK OIDC JWT作为访问鉴权方式
+
+```properties
+# 访问凭据类型
+credentials_type=ack_oidc_jwt
+# AAP ARN
+aap_arn=<aap arn>
+# OIDC令牌文件路径
+token_path=<oidc token file path>
+# 关联的KMS服务地域
+cache_client_region_id=[{"regionId":"<regionId>"}]
+# 访问KMS实例网关时，使用如下配置
+# cache_client_region_id=[{"regionId":"<regionId>","endpoint":"<you kms instanceId>.cryptoservice.kms.aliyuncs.com"}]
+```
+
+6. 采用mauth ClientKey作为访问鉴权方式
+
+```properties
+# 访问凭据类型
+credentials_type=client_key
+# ClientKey配置文件路径
+client_key_private_key_path=<client key config path>
+# ClientKey密码环境变量名称（与client_key_password_from_file_path二选一）
+client_key_password_from_env_variable=<env name>
+# ClientKey密码文件路径（与client_key_password_from_env_variable二选一）
+# client_key_password_from_file_path=<password file path>
+# 关联的KMS服务地域
+cache_client_region_id=[{"regionId":"<regionId>"}]
+# 访问KMS实例网关时，使用如下配置
+# cache_client_region_id=[{"regionId":"<regionId>","endpoint":"<you kms instanceId>.cryptoservice.kms.aliyuncs.com"}]
+```

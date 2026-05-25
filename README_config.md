@@ -46,3 +46,48 @@ cache_client_region_id=[{"regionId":"<regionId>"}]
 # When accessing KMS instance gateway, use the following configuration
 # cache_client_region_id=[{"regionId":"<regionId>","endpoint":"<you kms instanceId>.cryptoservice.kms.aliyuncs.com"}]
 ```
+
+4. Use mauth ECS Instance Identity to access Aliyun KMS, you must set the following configuration variables
+
+```properties
+# the type of access credentials
+credentials_type=ecs_instance_identity
+# AAP ARN
+aap_arn=<aap arn>
+# the region information
+cache_client_region_id=[{"regionId":"<regionId>"}]
+# When accessing KMS instance gateway, use the following configuration
+# cache_client_region_id=[{"regionId":"<regionId>","endpoint":"<you kms instanceId>.cryptoservice.kms.aliyuncs.com"}]
+```
+
+5. Use mauth ACK OIDC JWT to access Aliyun KMS, you must set the following configuration variables
+
+```properties
+# the type of access credentials
+credentials_type=ack_oidc_jwt
+# AAP ARN
+aap_arn=<aap arn>
+# OIDC token file path
+token_path=<oidc token file path>
+# the region information
+cache_client_region_id=[{"regionId":"<regionId>"}]
+# When accessing KMS instance gateway, use the following configuration
+# cache_client_region_id=[{"regionId":"<regionId>","endpoint":"<you kms instanceId>.cryptoservice.kms.aliyuncs.com"}]
+```
+
+6. Use mauth ClientKey to access Aliyun KMS, you must set the following configuration variables
+
+```properties
+# the type of access credentials
+credentials_type=client_key
+# ClientKey config file path
+client_key_private_key_path=<client key config path>
+# ClientKey password environment variable name (choose one with client_key_password_from_file_path)
+client_key_password_from_env_variable=<env name>
+# ClientKey password file path (choose one with client_key_password_from_env_variable)
+# client_key_password_from_file_path=<password file path>
+# the region information
+cache_client_region_id=[{"regionId":"<regionId>"}]
+# When accessing KMS instance gateway, use the following configuration
+# cache_client_region_id=[{"regionId":"<regionId>","endpoint":"<you kms instanceId>.cryptoservice.kms.aliyuncs.com"}]
+```

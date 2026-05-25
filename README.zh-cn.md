@@ -190,6 +190,89 @@ func main() {
 
 ```
 
+* 通过ECS实例身份方式构建客户端
+
+```go
+package main
+
+import (
+  "github.com/aliyun/alibabacloud-secretsmanager-client-go-v2/sdk"
+  "github.com/aliyun/alibabacloud-secretsmanager-client-go-v2/sdk/models"
+  "github.com/aliyun/alibabacloud-secretsmanager-client-go-v2/sdk/service"
+)
+
+func main() {
+  client, err := sdk.NewSecretCacheClientBuilder(
+    service.NewDefaultSecretManagerClientBuilder().Standard().
+      WithECSInstanceIdentity("#aapArn#").
+      AddRegionInfo(models.NewRegionInfoWithVpcEndpoint("#regionId#", true, "")).Build()).Build()
+  if err != nil {
+    // Handle exceptions
+    panic(err)
+  }
+  secretInfo, err := client.GetSecretInfo("#secretName#")
+  if err != nil {
+    // Handle exceptions
+    panic(err)
+  }
+}
+```
+
+* 通过ACK OIDC JWT方式构建客户端
+
+```go
+package main
+
+import (
+  "github.com/aliyun/alibabacloud-secretsmanager-client-go-v2/sdk"
+  "github.com/aliyun/alibabacloud-secretsmanager-client-go-v2/sdk/models"
+  "github.com/aliyun/alibabacloud-secretsmanager-client-go-v2/sdk/service"
+)
+
+func main() {
+  client, err := sdk.NewSecretCacheClientBuilder(
+    service.NewDefaultSecretManagerClientBuilder().Standard().
+      WithACKOidcJwt("#aapArn#", "#oidcTokenFilePath#").
+      AddRegionInfo(models.NewRegionInfoWithVpcEndpoint("#regionId#", true, "")).Build()).Build()
+  if err != nil {
+    // Handle exceptions
+    panic(err)
+  }
+  secretInfo, err := client.GetSecretInfo("#secretName#")
+  if err != nil {
+    // Handle exceptions
+    panic(err)
+  }
+}
+```
+
+* 通过ClientKey方式构建客户端
+
+```go
+package main
+
+import (
+  "github.com/aliyun/alibabacloud-secretsmanager-client-go-v2/sdk"
+  "github.com/aliyun/alibabacloud-secretsmanager-client-go-v2/sdk/service"
+)
+
+func main() {
+  client, err := sdk.NewSecretCacheClientBuilder(
+    service.NewDefaultSecretManagerClientBuilder().Standard().
+      WithClientKey("#clientKeyPrivateKeyPath#", "#clientKeyPasswordFilePath#").
+      WithRegion("#regionId#").Build()).Build()
+  if err != nil {
+    // Handle exceptions
+    panic(err)
+  }
+  secretInfo, err := client.GetSecretInfo("#secretName#")
+  if err != nil {
+    // Handle exceptions
+    panic(err)
+  }
+}
+```
+
 ## 常见问题 FAQ
 
 ### 1. 出现 "cannot find the built-in ca certificate for region[$regionId], please provide the caFilePath parameter." 错误怎么办？

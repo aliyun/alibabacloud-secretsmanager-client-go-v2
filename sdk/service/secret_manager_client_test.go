@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	mauthconfig "github.com/aliyun/alibabacloud-secretsmanager-client-go-v2/sdk/mauth/config"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -1265,4 +1266,234 @@ func (m *mockCredentialsProvider) GetType() *string {
 
 func (m *mockCredentialsProvider) GetCredential() (*credentials.CredentialModel, error) {
 	return nil, nil
+}
+
+// 测试mauth配置 - 配置文件方式ClientKey（环境变量密码）
+func TestInitMAuthConfigFromConfigFile_ClientKey_EnvPassword(t *testing.T) {
+	tmpFile, err := ioutil.TempFile("", "secretsmanager*.properties")
+	assert.Nil(t, err)
+	defer os.Remove(tmpFile.Name())
+
+	tmpClientKeyFile, err := ioutil.TempFile("", "client_key_*.json")
+	assert.Nil(t, err)
+	defer os.Remove(tmpClientKeyFile.Name())
+
+	content := utils.VariableCredentialsTypeKey + "=client_key\n" +
+		utils.VariableCredentialsClientKeyConfigPathKey + "=" + tmpClientKeyFile.Name() + "\n" +
+		utils.VariableCredentialsClientKeyPasswordEnvNameKey + "=TEST_MAUTH_CLIENT_KEY_PWD\n" +
+		utils.VariableCacheClientRegionIdKey + "=[{\"regionId\":\"cn-hangzhou\"}]\n"
+	_, err = tmpFile.WriteString(content)
+	assert.Nil(t, err)
+	tmpFile.Close()
+
+	os.Setenv("TEST_MAUTH_CLIENT_KEY_PWD", "test_env_password")
+	defer os.Unsetenv("TEST_MAUTH_CLIENT_KEY_PWD")
+
+	builder := NewDefaultSecretManagerClientBuilder()
+	builder.WithCustomConfigFile(tmpFile.Name())
+	client := builder.Build()
+
+	err = client.Init()
+	assert.Nil(t, err)
+
+	defaultClient, ok := client.(*defaultSecretManagerClient)
+	assert.True(t, ok)
+	assert.NotNil(t, defaultClient.mauthConfig)
+	assert.Equal(t, mauthconfig.ClientKey, defaultClient.mauthConfig.AuthMethod)
+	assert.Equal(t, tmpClientKeyFile.Name(), defaultClient.mauthConfig.ClientKeyConfigPath)
+	assert.Equal(t, "test_env_password", defaultClient.mauthConfig.ClientKeyPassword)
+}
+
+// 测试mauth配置 - 环境变量方式ClientKey（环境变量密码）
+func TestInitMAuthConfigFromEnv_ClientKey_EnvPassword(t *testing.T) {
+	tmpClientKeyFile, err := ioutil.TempFile("", "client_key_*.json")
+	assert.Nil(t, err)
+	defer os.Remove(tmpClientKeyFile.Name())
+
+	envVars := map[string]string{
+		utils.VariableCredentialsTypeKey:                     "client_key",
+		utils.VariableCredentialsClientKeyConfigPathKey:      tmpClientKeyFile.Name(),
+		utils.VariableCredentialsClientKeyPasswordEnvNameKey: "TEST_ENV_CLIENT_KEY_PWD",
+	}
+
+	oldEnv := make(map[string]string)
+	for key := range envVars {
+		oldEnv[key] = os.Getenv(key)
+	}
+	for key, value := range envVars {
+		os.Setenv(key, value)
+	}
+	os.Setenv("TEST_ENV_CLIENT_KEY_PWD", "env_password_value")
+
+	defer func() {
+		for key, value := range oldEnv {
+			if value == "" {
+				os.Unsetenv(key)
+			} else {
+				os.Setenv(key, value)
+			}
+		}
+		os.Unsetenv("TEST_ENV_CLIENT_KEY_PWD")
+	}()
+
+	builder := NewDefaultSecretManagerClientBuilder()
+	builder.AddRegion("cn-hangzhou")
+	client := builder.Build()
+
+	err = client.Init()
+	assert.Nil(t, err)
+
+	defaultClient, ok := client.(*defaultSecretManagerClient)
+	assert.True(t, ok)
+	assert.NotNil(t, defaultClient.mauthConfig)
+	assert.Equal(t, "env_password_value", defaultClient.mauthConfig.ClientKeyPassword)
+}
+
+// 测试mauth配置 - 配置文件方式ClientKey（密码文件路径）
+func TestInitMAuthConfigFromConfigFile_ClientKey_PasswordPath(t *testing.T) {
+	tmpFile, err := ioutil.TempFile("", "secretsmanager*.properties")
+	assert.Nil(t, err)
+	defer os.Remove(tmpFile.Name())
+
+	tmpClientKeyFile, err := ioutil.TempFile("", "client_key_*.json")
+	assert.Nil(t, err)
+	defer os.Remove(tmpClientKeyFile.Name())
+
+	tmpPwdFile, err := ioutil.TempFile("", "password_*.txt")
+	assert.Nil(t, err)
+	defer os.Remove(tmpPwdFile.Name())
+
+	content := utils.VariableCredentialsTypeKey + "=client_key\n" +
+		utils.VariableCredentialsClientKeyConfigPathKey + "=" + tmpClientKeyFile.Name() + "\n" +
+		utils.VariableCredentialsClientKeyPasswordPathKey + "=" + tmpPwdFile.Name() + "\n" +
+		utils.VariableCacheClientRegionIdKey + "=[{\"regionId\":\"cn-hangzhou\"}]\n"
+	_, err = tmpFile.WriteString(content)
+	assert.Nil(t, err)
+	tmpFile.Close()
+
+	builder := NewDefaultSecretManagerClientBuilder()
+	builder.WithCustomConfigFile(tmpFile.Name())
+	client := builder.Build()
+
+	err = client.Init()
+	assert.Nil(t, err)
+
+	defaultClient, ok := client.(*defaultSecretManagerClient)
+	assert.True(t, ok)
+	assert.NotNil(t, defaultClient.mauthConfig)
+	assert.Equal(t, tmpPwdFile.Name(), defaultClient.mauthConfig.ClientKeyPasswordPath)
+	assert.Equal(t, "", defaultClient.mauthConfig.ClientKeyPassword)
+}
+
+// 测试mauth配置 - 配置文件方式ACK OIDC JWT
+func TestInitMAuthConfigFromConfigFile_ACKOidcJwt(t *testing.T) {
+	tmpTokenFile, err := ioutil.TempFile("", "token_*.txt")
+	assert.Nil(t, err)
+	defer os.Remove(tmpTokenFile.Name())
+
+	_, err = tmpTokenFile.WriteString("eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0In0.test_signature")
+	assert.Nil(t, err)
+	tmpTokenFile.Close()
+
+	tmpConfigFile, err := ioutil.TempFile("", "secretsmanager*.properties")
+	assert.Nil(t, err)
+	defer os.Remove(tmpConfigFile.Name())
+
+	content := utils.VariableCredentialsTypeKey + "=ack_oidc_jwt\n" +
+		utils.VariableCredentialsAapArnKey + "=arn:test:aap\n" +
+		utils.VariableCredentialsTokenPathKey + "=" + tmpTokenFile.Name() + "\n" +
+		utils.VariableCacheClientRegionIdKey + "=[{\"regionId\":\"cn-hangzhou\"}]\n"
+	_, err = tmpConfigFile.WriteString(content)
+	assert.Nil(t, err)
+	tmpConfigFile.Close()
+
+	builder := NewDefaultSecretManagerClientBuilder()
+	builder.WithCustomConfigFile(tmpConfigFile.Name())
+	client := builder.Build()
+
+	err = client.Init()
+	assert.Nil(t, err)
+
+	defaultClient, ok := client.(*defaultSecretManagerClient)
+	assert.True(t, ok)
+	assert.NotNil(t, defaultClient.mauthConfig)
+	assert.Equal(t, mauthconfig.ACKOidcJwt, defaultClient.mauthConfig.AuthMethod)
+}
+
+// 测试mauth配置 - 环境变量方式ECS Instance Identity
+func TestInitMAuthConfigFromEnv_ECSInstanceIdentity(t *testing.T) {
+	envVars := map[string]string{
+		utils.VariableCredentialsTypeKey:   "ecs_instance_identity",
+		utils.VariableCredentialsAapArnKey: "arn:test:aap",
+	}
+
+	oldEnv := make(map[string]string)
+	for key := range envVars {
+		oldEnv[key] = os.Getenv(key)
+	}
+	for key, value := range envVars {
+		os.Setenv(key, value)
+	}
+
+	defer func() {
+		for key, value := range oldEnv {
+			if value == "" {
+				os.Unsetenv(key)
+			} else {
+				os.Setenv(key, value)
+			}
+		}
+	}()
+
+	builder := NewDefaultSecretManagerClientBuilder()
+	builder.AddRegion("cn-hangzhou")
+	client := builder.Build()
+
+	err := client.Init()
+	assert.Nil(t, err)
+
+	defaultClient, ok := client.(*defaultSecretManagerClient)
+	assert.True(t, ok)
+	assert.NotNil(t, defaultClient.mauthConfig)
+	assert.Equal(t, mauthconfig.ECSInstanceIdentity, defaultClient.mauthConfig.AuthMethod)
+}
+
+// 测试mauth配置 - 环境变量密码未设置
+func TestInitMAuthConfigFromEnv_ClientKey_EnvPasswordNotSet(t *testing.T) {
+	tmpClientKeyFile, err := ioutil.TempFile("", "client_key_*.json")
+	assert.Nil(t, err)
+	defer os.Remove(tmpClientKeyFile.Name())
+
+	envVars := map[string]string{
+		utils.VariableCredentialsTypeKey:                     "client_key",
+		utils.VariableCredentialsClientKeyConfigPathKey:      tmpClientKeyFile.Name(),
+		utils.VariableCredentialsClientKeyPasswordEnvNameKey: "TEST_NOT_SET_PWD",
+	}
+
+	oldEnv := make(map[string]string)
+	for key := range envVars {
+		oldEnv[key] = os.Getenv(key)
+	}
+	for key, value := range envVars {
+		os.Setenv(key, value)
+	}
+	os.Unsetenv("TEST_NOT_SET_PWD")
+
+	defer func() {
+		for key, value := range oldEnv {
+			if value == "" {
+				os.Unsetenv(key)
+			} else {
+				os.Setenv(key, value)
+			}
+		}
+	}()
+
+	builder := NewDefaultSecretManagerClientBuilder()
+	builder.AddRegion("cn-hangzhou")
+	client := builder.Build()
+
+	err = client.Init()
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), utils.VariableCredentialsClientKeyPasswordEnvNameKey)
 }
