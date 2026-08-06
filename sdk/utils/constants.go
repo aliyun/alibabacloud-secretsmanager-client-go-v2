@@ -58,6 +58,21 @@ const (
 	// VariableCredentialsTypeEcsInstanceIdentity mauth ECS Instance Identity 凭据类型值
 	VariableCredentialsTypeEcsInstanceIdentity = "ecs_instance_identity"
 
+	// VariableCredentialsTypeAwsEc2PKCS7 AWS EC2 PKCS7 凭据类型值
+	VariableCredentialsTypeAwsEc2PKCS7 = "aws_ec2_pkcs7"
+	// VariableCredentialsTypeAwsEksOIDC AWS EKS OIDC 凭据类型值
+	VariableCredentialsTypeAwsEksOIDC = "aws_eks_oidc"
+	// VariableCredentialsTypeGcpVmOIDC GCP VM OIDC 凭据类型值
+	VariableCredentialsTypeGcpVmOIDC = "gcp_vm_oidc"
+	// VariableCredentialsTypeGcpGkeOIDC GCP GKE OIDC 凭据类型值
+	VariableCredentialsTypeGcpGkeOIDC = "gcp_gke_oidc"
+	// VariableCredentialsTypeAzureVmOIDC Azure VM OIDC 凭据类型值
+	VariableCredentialsTypeAzureVmOIDC = "azure_vm_oidc"
+	// VariableCredentialsTypeAzureAksOIDC Azure AKS OIDC 凭据类型值
+	VariableCredentialsTypeAzureAksOIDC = "azure_aks_oidc"
+	// VariableCredentialsTypeGenericKubernetesOIDC Generic Kubernetes OIDC 凭据类型值
+	VariableCredentialsTypeGenericKubernetesOIDC = "generic_kubernetes_oidc"
+
 	// VariableCredentialsAccessKeyIdKey AccessKey ID配置键名
 	VariableCredentialsAccessKeyIdKey = "credentials_access_key_id"
 
@@ -118,6 +133,9 @@ const (
 	// VariableCredentialsClientKeyPasswordPathKey mauth ClientKey密码文件路径配置键名
 	VariableCredentialsClientKeyPasswordPathKey = "client_key_password_from_file_path"
 
+	// VariableCredentialsIDaaSConfigPathKey IDaaS 原生配置文件路径配置键名
+	VariableCredentialsIDaaSConfigPathKey = "idaas_config_path"
+
 	// TextDataType 凭据文本数据类型
 	TextDataType = "text"
 
@@ -128,7 +146,7 @@ const (
 	ModeName = "SecretsManagerClientV2"
 
 	// ProjectVersion 项目版本
-	ProjectVersion = "2.0.1"
+	ProjectVersion = "2.0.2"
 
 	// CredentialsPropertiesConfigName 凭据配置文件名称
 	CredentialsPropertiesConfigName = "secretsmanager.properties"

@@ -37,7 +37,7 @@
 	export cache_client_region_id=[{"regionId":"<your region id>","endpoint":"<your kms instanceId>.cryptoservice.kms.aliyuncs.com"}]
 ```
 
-* 通过使用mauth ECS Instance Identity访问KMS，你必须要设置如下系统环境变量 (linux):
+* 通过使用云原生 ECS Instance Identity访问KMS，你必须要设置如下系统环境变量 (linux):
 
 	- export credentials\_type=ecs\_instance\_identity
 	- export aap\_arn=\<aap arn>
@@ -48,7 +48,7 @@
 	export cache_client_region_id=[{"regionId":"<your region id>","endpoint":"<your kms instanceId>.cryptoservice.kms.aliyuncs.com"}]
 ```
 
-* 通过使用mauth ACK OIDC JWT访问KMS，你必须要设置如下系统环境变量 (linux):
+* 通过使用云原生 ACK OIDC JWT访问KMS，你必须要设置如下系统环境变量 (linux):
 
 	- export credentials\_type=ack\_oidc\_jwt
 	- export aap\_arn=\<aap arn>
@@ -60,12 +60,24 @@
 	export cache_client_region_id=[{"regionId":"<your region id>","endpoint":"<your kms instanceId>.cryptoservice.kms.aliyuncs.com"}]
 ```
 
-* 通过使用mauth ClientKey访问KMS，你必须要设置如下系统环境变量 (linux):
+* 通过使用云原生 ClientKey访问KMS，你必须要设置如下系统环境变量 (linux):
 
 	- export credentials\_type=client\_key
 	- export client\_key\_private\_key\_path=\<client key config path>
 	- export client\_key\_password\_from\_file\_path=\<password file path> (与client_key_password_from_env_variable二选一)
-  # - export client\_key\_password\_from\_env\_name=\<env name> (与client_key_password_from_file_path二选一)
+  # - export client\_key\_password\_from\_env\_variable=\<env name> (与client_key_password_from_file_path二选一)
+	- export cache\_client\_region\_id=[{"regionId":"\<your region id>"}]
+```
+提示:
+	访问KMS实例网关时，使用如下配置
+	export cache_client_region_id=[{"regionId":"<your region id>","endpoint":"<your kms instanceId>.cryptoservice.kms.aliyuncs.com"}]
+```
+
+* 通过使用多云 IDaaS访问KMS，你必须要设置如下系统环境变量 (linux):
+
+	- export credentials\_type=aws_ec2_pkcs7（同时支持：aws_eks_oidc、gcp_vm_oidc、gcp_gke_oidc、azure_vm_oidc、azure_aks_oidc、generic_kubernetes_oidc）
+	- export idaas\_config\_path=\<idaas config path>
+	- export aap\_arn=\<aap arn>
 	- export cache\_client\_region\_id=[{"regionId":"\<your region id>"}]
 ```
 提示:

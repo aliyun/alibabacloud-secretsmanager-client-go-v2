@@ -47,7 +47,7 @@ cache_client_region_id=[{"regionId":"<regionId>"}]
 # cache_client_region_id=[{"regionId":"<regionId>","endpoint":"<you kms instanceId>.cryptoservice.kms.aliyuncs.com"}]
 ```
 
-4. 采用mauth ECS Instance Identity作为访问鉴权方式
+4. 采用云原生 ECS Instance Identity作为访问鉴权方式
 
 ```properties
 # 访问凭据类型
@@ -60,7 +60,7 @@ cache_client_region_id=[{"regionId":"<regionId>"}]
 # cache_client_region_id=[{"regionId":"<regionId>","endpoint":"<you kms instanceId>.cryptoservice.kms.aliyuncs.com"}]
 ```
 
-5. 采用mauth ACK OIDC JWT作为访问鉴权方式
+5. 采用云原生 ACK OIDC JWT作为访问鉴权方式
 
 ```properties
 # 访问凭据类型
@@ -75,7 +75,7 @@ cache_client_region_id=[{"regionId":"<regionId>"}]
 # cache_client_region_id=[{"regionId":"<regionId>","endpoint":"<you kms instanceId>.cryptoservice.kms.aliyuncs.com"}]
 ```
 
-6. 采用mauth ClientKey作为访问鉴权方式
+6. 采用云原生 ClientKey作为访问鉴权方式
 
 ```properties
 # 访问凭据类型
@@ -86,6 +86,21 @@ client_key_private_key_path=<client key config path>
 client_key_password_from_env_variable=<env name>
 # ClientKey密码文件路径（与client_key_password_from_env_variable二选一）
 # client_key_password_from_file_path=<password file path>
+# 关联的KMS服务地域
+cache_client_region_id=[{"regionId":"<regionId>"}]
+# 访问KMS实例网关时，使用如下配置
+# cache_client_region_id=[{"regionId":"<regionId>","endpoint":"<you kms instanceId>.cryptoservice.kms.aliyuncs.com"}]
+```
+
+7. 采用多云 IDaaS作为访问鉴权方式
+
+```properties
+# 访问凭据类型，可选值：aws_ec2_pkcs7、aws_eks_oidc、gcp_vm_oidc、gcp_gke_oidc、azure_vm_oidc、azure_aks_oidc、generic_kubernetes_oidc
+credentials_type=aws_ec2_pkcs7
+# IDaaS client-config.json 配置文件路径
+idaas_config_path=<idaas config path>
+# 应用访问点 ARN
+aap_arn=<aap arn>
 # 关联的KMS服务地域
 cache_client_region_id=[{"regionId":"<regionId>"}]
 # 访问KMS实例网关时，使用如下配置

@@ -15,6 +15,8 @@ import (
 )
 
 func TestSecretCacheClientBuilder_Build(t *testing.T) {
+	t.Skip("Integration test requires real KMS instance")
+
 	regionId := "cn-hangzhou"
 	cacheSecretPath := "secrets"
 	salt := "1234abcd"
@@ -33,6 +35,8 @@ func TestSecretCacheClientBuilder_Build(t *testing.T) {
 }
 
 func TestNewClient(t *testing.T) {
+	t.Skip("Integration test requires real KMS instance")
+
 	client, err := NewClient()
 	assert.Nil(t, err)
 	secretInfo, err := client.GetSecretInfo("cache_client")
@@ -40,6 +44,8 @@ func TestNewClient(t *testing.T) {
 	println("secretInfo:", secretInfo.SecretValue)
 }
 func TestNewSecretCacheClientBuilder(t *testing.T) {
+	t.Skip("Integration test requires real KMS instance")
+
 	client, _ := NewSecretCacheClientBuilder(service.NewDefaultSecretManagerClientBuilder().WithAccessKey(accessKeyId, accessKeySecret).Build()).Build()
 	secretInfo, err := client.GetSecretInfo("cache_client")
 	assert.Nil(t, err)

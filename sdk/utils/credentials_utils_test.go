@@ -110,16 +110,17 @@ func TestInitMAuthConfig_ACKOidcJwt_MissingAapArn(t *testing.T) {
 	assert.Contains(t, err.Error(), VariableCredentialsAapArnKey)
 }
 
-func TestInitMAuthConfig_ACKOidcJwt_MissingTokenPath(t *testing.T) {
+func TestInitMAuthConfig_ACKOidcJwt_WithoutTokenPath(t *testing.T) {
 	configMap := map[string]string{
 		VariableCredentialsTypeKey:   VariableCredentialsTypeAckOidcJwt,
 		VariableCredentialsAapArnKey: "arn:test:aap",
 	}
 
 	cfg, err := InitMAuthConfig(configMap, SourceTypeConfig)
-	assert.NotNil(t, err)
-	assert.Nil(t, cfg)
-	assert.Contains(t, err.Error(), VariableCredentialsTokenPathKey)
+	assert.Nil(t, err)
+	assert.NotNil(t, cfg)
+	assert.Equal(t, "arn:test:aap", cfg.AapArn)
+	assert.Equal(t, "", cfg.TokenPath)
 }
 
 func TestInitMAuthConfig_ECSInstanceIdentity_Success(t *testing.T) {
@@ -162,4 +163,19 @@ func TestInitMAuthConfig_UnsupportedCredentialsType(t *testing.T) {
 	cfg, err := InitMAuthConfig(configMap, SourceTypeConfig)
 	assert.Nil(t, err)
 	assert.Nil(t, cfg)
+}
+
+func TestInitMAuthConfig_MultiCloudIDaaS_Success(t *testing.T) {
+	configMap := map[string]string{
+		VariableCredentialsTypeKey:            VariableCredentialsTypeAwsEksOIDC,
+		VariableCredentialsAapArnKey:          "arn:test:aap",
+		VariableCredentialsIDaaSConfigPathKey: "/path/to/config.json",
+	}
+
+	cfg, err := InitMAuthConfig(configMap, SourceTypeConfig)
+	assert.Nil(t, err)
+	assert.NotNil(t, cfg)
+	assert.Equal(t, mauthconfig.AwsEksOIDC, cfg.AuthMethod)
+	assert.Equal(t, "arn:test:aap", cfg.AapArn)
+	assert.Equal(t, "/path/to/config.json", cfg.IDaaSConfigPath)
 }

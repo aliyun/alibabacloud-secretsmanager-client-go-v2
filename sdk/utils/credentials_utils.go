@@ -12,6 +12,19 @@ import (
 
 var (
 	CheckParamIllegalMessage = "%s credentials param[%s] is illegal"
+
+	credentialsTypeToAuthMethod = map[string]string{
+		VariableCredentialsTypeClientKey:             mauthconfig.ClientKey,
+		VariableCredentialsTypeAckOidcJwt:            mauthconfig.ACKOidcJwt,
+		VariableCredentialsTypeEcsInstanceIdentity:   mauthconfig.ECSInstanceIdentity,
+		VariableCredentialsTypeAwsEc2PKCS7:           mauthconfig.AwsEc2PKCS7,
+		VariableCredentialsTypeAwsEksOIDC:            mauthconfig.AwsEksOIDC,
+		VariableCredentialsTypeGcpVmOIDC:             mauthconfig.GcpVmOIDC,
+		VariableCredentialsTypeGcpGkeOIDC:            mauthconfig.GcpGkeOIDC,
+		VariableCredentialsTypeAzureVmOIDC:           mauthconfig.AzureVmOIDC,
+		VariableCredentialsTypeAzureAksOIDC:          mauthconfig.AzureAksOIDC,
+		VariableCredentialsTypeGenericKubernetesOIDC: mauthconfig.GenericKubernetesOIDC,
+	}
 )
 
 func CredentialsWithAccessKey(accessKeyId, accessKeySecret string) (credentials.Credential, error) {
@@ -150,7 +163,10 @@ func InitCredential(configMap map[string]string, sourceTypeName string) (credent
 		stsEndpoint := configMap[VariableCredentialsOidcStsEndpointKey]
 		return CredentialsWithOIDCRoleArn(roleArn, oidcProviderArn, oidcTokenFilePath, roleSessionName, policy, stsEndpoint, roleSessionExpiration)
 
-	case VariableCredentialsTypeClientKey, VariableCredentialsTypeAckOidcJwt, VariableCredentialsTypeEcsInstanceIdentity:
+	case VariableCredentialsTypeClientKey, VariableCredentialsTypeAckOidcJwt, VariableCredentialsTypeEcsInstanceIdentity,
+		VariableCredentialsTypeAwsEc2PKCS7, VariableCredentialsTypeAwsEksOIDC,
+		VariableCredentialsTypeGcpVmOIDC, VariableCredentialsTypeGcpGkeOIDC, VariableCredentialsTypeAzureVmOIDC,
+		VariableCredentialsTypeAzureAksOIDC, VariableCredentialsTypeGenericKubernetesOIDC:
 		// mauth 认证方式，不创建 credentials.Credential，由 InitMAuthConfig 负责解析配置
 		return nil, nil
 
@@ -170,15 +186,8 @@ func InitMAuthConfig(configMap map[string]string, sourceTypeName string) (*mauth
 		return nil, nil
 	}
 
-	var authMethod string
-	switch credentialsType {
-	case VariableCredentialsTypeClientKey:
-		authMethod = mauthconfig.ClientKey
-	case VariableCredentialsTypeAckOidcJwt:
-		authMethod = mauthconfig.ACKOidcJwt
-	case VariableCredentialsTypeEcsInstanceIdentity:
-		authMethod = mauthconfig.ECSInstanceIdentity
-	default:
+	authMethod, ok := credentialsTypeToAuthMethod[credentialsType]
+	if !ok {
 		return nil, nil
 	}
 
@@ -195,6 +204,7 @@ func InitMAuthConfig(configMap map[string]string, sourceTypeName string) (*mauth
 		ClientKeyConfigPath:   configMap[VariableCredentialsClientKeyConfigPathKey],
 		ClientKeyPassword:     clientKeyPassword,
 		ClientKeyPasswordPath: configMap[VariableCredentialsClientKeyPasswordPathKey],
+		IDaaSConfigPath:       configMap[VariableCredentialsIDaaSConfigPathKey],
 	}
 
 	switch authMethod {
@@ -203,6 +213,11 @@ func InitMAuthConfig(configMap map[string]string, sourceTypeName string) (*mauth
 			return nil, fmt.Errorf(CheckParamErrorMessage, sourceTypeName, VariableCredentialsAapArnKey)
 		}
 	case mauthconfig.ECSInstanceIdentity:
+		if cfg.AapArn == "" {
+			return nil, fmt.Errorf(CheckParamErrorMessage, sourceTypeName, VariableCredentialsAapArnKey)
+		}
+	case mauthconfig.AwsEc2PKCS7, mauthconfig.AwsEksOIDC, mauthconfig.GcpVmOIDC,
+		mauthconfig.GcpGkeOIDC, mauthconfig.AzureVmOIDC, mauthconfig.AzureAksOIDC, mauthconfig.GenericKubernetesOIDC:
 		if cfg.AapArn == "" {
 			return nil, fmt.Errorf(CheckParamErrorMessage, sourceTypeName, VariableCredentialsAapArnKey)
 		}

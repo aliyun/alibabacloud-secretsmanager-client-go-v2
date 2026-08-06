@@ -65,8 +65,10 @@ func NewMAuth(c config.AuthConfig, lw logger.Wrapper) (*MAuth, error) {
 	// 创建认证器管理器
 	authenticatorManager, err := authenticator.NewAuthenticatorManager(
 		authenticator.Config{
-			AuthMethod: c.AuthMethod,
-			TokenPath:  c.TokenPath,
+			AuthMethod:        c.AuthMethod,
+			TokenPath:         c.TokenPath,
+			IDaaSConfigPath:   c.IDaaSConfigPath,
+			IDaaSClientConfig: c.IDaaSClientConfig,
 		})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create authenticator manager: %w", err)
@@ -165,7 +167,7 @@ func (m *MAuth) GetToken(ctx context.Context) (*AuthToken, error) {
 	if m.config.AuthMethod == config.ClientKey {
 		newToken, err = m.getClientKeyByLocalFile(ctx)
 	} else {
-		// 5. 如果 auth method 是 ECSInstanceIdentity、ACKOidcJwt 则调用 GetTokenFromRemote获取
+		// 5. 如果 auth method 是 ECSInstanceIdentity、ACKOidcJwt、IDaaS 则调用 GetTokenFromRemote获取
 		newToken, err = m.getTokenFromRemote(ctx)
 	}
 

@@ -32,6 +32,7 @@ func TestNewMAuth_ClientKey_Success(t *testing.T) {
 func TestNewMAuth_ACKOidcJwt_Success(t *testing.T) {
 	cfg := config.AuthConfig{
 		AuthMethod:  config.ACKOidcJwt,
+		AapArn:      "arn:test:aap",
 		KmsEndpoint: "https://kms.cn-hangzhou.aliyuncs.com",
 	}
 
@@ -43,6 +44,7 @@ func TestNewMAuth_ACKOidcJwt_Success(t *testing.T) {
 func TestNewMAuth_ECSInstanceIdentity_Success(t *testing.T) {
 	cfg := config.AuthConfig{
 		AuthMethod:  config.ECSInstanceIdentity,
+		AapArn:      "arn:test:aap",
 		KmsEndpoint: "https://kms.cn-hangzhou.aliyuncs.com",
 	}
 
@@ -214,4 +216,17 @@ func TestMAuth_getClientKeyByLocalFile_MissingPassword(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.Nil(t, m)
 	assert.Contains(t, err.Error(), "ClientKeyPassword or ClientKeyPasswordPath is required")
+}
+
+func TestNewMAuth_MultiCloudIDaaS_Success(t *testing.T) {
+	cfg := config.AuthConfig{
+		AuthMethod:  config.AwsEc2PKCS7,
+		AapArn:      "arn:test:aap",
+		KmsEndpoint: "https://kms.cn-hangzhou.aliyuncs.com",
+	}
+
+	m, err := NewMAuth(cfg, nil)
+	assert.Nil(t, err)
+	assert.NotNil(t, m)
+	assert.Equal(t, config.AwsEc2PKCS7, m.config.AuthMethod)
 }

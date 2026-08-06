@@ -43,14 +43,7 @@ func (sm *secretManagerClientWithBearer) doGetSecretValueWithBearer(regionInfo *
 		return nil, fmt.Errorf("get token error: %w", err)
 	}
 
-	// 2. 构建签名参数，进行签名
-	queryParams, header := utils.ExtractSignParams(req, token.TokenKeyId, utils.ActionGetSecretValue)
-	signature, err := utils.Sign(queryParams, header, token.TokenValue)
-	if err != nil {
-		return nil, fmt.Errorf("sign error: %w", err)
-	}
-
-	// 3. 复制配置并添加签名信息
+	// 2. 复制配置并添加认证信息
 	config := &openapi.Config{}
 	endpoint := resolveEndpoint(regionInfo)
 	config.SetEndpoint(endpoint)
@@ -62,6 +55,16 @@ func (sm *secretManagerClientWithBearer) doGetSecretValueWithBearer(regionInfo *
 		config.SetCa(ca)
 	}
 	config.SetProtocol(utils.DefaultProtocol)
+
+	var header map[string]string
+
+	// ClientKey：构建签名参数，进行签名
+	var queryParams map[string]string
+	queryParams, header = utils.ExtractSignParams(req, token.TokenKeyId, utils.ActionGetSecretValue)
+	signature, err := utils.Sign(queryParams, header, token.TokenValue)
+	if err != nil {
+		return nil, fmt.Errorf("sign error: %w", err)
+	}
 	config.SetBearerToken(signature)
 
 	kmsClient, err := kms20160120.NewClient(config)
@@ -69,7 +72,6 @@ func (sm *secretManagerClientWithBearer) doGetSecretValueWithBearer(regionInfo *
 		return nil, fmt.Errorf("failed to create sm client: %v", err)
 	}
 
-	// 把那些header 加到client 里去
 	if kmsClient.Headers == nil {
 		kmsClient.Headers = map[string]*string{}
 	}

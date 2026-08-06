@@ -20,6 +20,7 @@ import (
 	mauthconfig "github.com/aliyun/alibabacloud-secretsmanager-client-go-v2/sdk/mauth/config"
 	"github.com/aliyun/alibabacloud-secretsmanager-client-go-v2/sdk/models"
 	"github.com/aliyun/alibabacloud-secretsmanager-client-go-v2/sdk/utils"
+	idaasconfig "github.com/cloud-idaas/idaas-go-core-sdk/config"
 )
 
 // SecretManagerClient 是阿里云凭据管理服务客户端接口
@@ -182,6 +183,188 @@ func (dsb *DefaultSecretManagerClientBuilder) WithECSInstanceIdentity(aapArn str
 	return dsb
 }
 
+// WithAwsEc2PKCS7 使用AWS EC2 PKCS7配置认证信息（对象版本）
+// 参数clientConfig为IDaaS客户端配置对象
+// 参数aapArn为应用访问点ARN
+// 返回构建器本身以支持链式调用
+func (dsb *DefaultSecretManagerClientBuilder) WithAwsEc2PKCS7(clientConfig *idaasconfig.IDaaSClientConfig, aapArn string) *DefaultSecretManagerClientBuilder {
+	dsb.mauthConfig = &mauthconfig.AuthConfig{
+		AuthMethod:        mauthconfig.AwsEc2PKCS7,
+		AapArn:            aapArn,
+		IDaaSClientConfig: clientConfig,
+	}
+	return dsb
+}
+
+// WithAwsEc2PKCS7Path 使用AWS EC2 PKCS7配置认证信息（配置文件路径版本）
+// 参数configPath为IDaaS配置文件路径；为空时走IDaaS原生默认读取逻辑
+// 参数aapArn为应用访问点ARN
+// 返回构建器本身以支持链式调用
+func (dsb *DefaultSecretManagerClientBuilder) WithAwsEc2PKCS7Path(configPath, aapArn string) *DefaultSecretManagerClientBuilder {
+	dsb.mauthConfig = &mauthconfig.AuthConfig{
+		AuthMethod:      mauthconfig.AwsEc2PKCS7,
+		AapArn:          aapArn,
+		IDaaSConfigPath: configPath,
+	}
+	return dsb
+}
+
+// WithAwsEksOIDC 使用AWS EKS OIDC配置认证信息（对象版本）
+// 参数clientConfig为IDaaS客户端配置对象
+// 参数aapArn为应用访问点ARN
+// 返回构建器本身以支持链式调用
+func (dsb *DefaultSecretManagerClientBuilder) WithAwsEksOIDC(clientConfig *idaasconfig.IDaaSClientConfig, aapArn string) *DefaultSecretManagerClientBuilder {
+	dsb.mauthConfig = &mauthconfig.AuthConfig{
+		AuthMethod:        mauthconfig.AwsEksOIDC,
+		AapArn:            aapArn,
+		IDaaSClientConfig: clientConfig,
+	}
+	return dsb
+}
+
+// WithAwsEksOIDCPath 使用AWS EKS OIDC配置认证信息（配置文件路径版本）
+// 参数configPath为IDaaS配置文件路径；为空时走IDaaS原生默认读取逻辑
+// 参数aapArn为应用访问点ARN
+// 返回构建器本身以支持链式调用
+func (dsb *DefaultSecretManagerClientBuilder) WithAwsEksOIDCPath(configPath, aapArn string) *DefaultSecretManagerClientBuilder {
+	dsb.mauthConfig = &mauthconfig.AuthConfig{
+		AuthMethod:      mauthconfig.AwsEksOIDC,
+		AapArn:          aapArn,
+		IDaaSConfigPath: configPath,
+	}
+	return dsb
+}
+
+// WithGcpVmOIDC 使用GCP VM OIDC配置认证信息（对象版本）
+// 参数clientConfig为IDaaS客户端配置对象
+// 参数aapArn为应用访问点ARN
+// 返回构建器本身以支持链式调用
+func (dsb *DefaultSecretManagerClientBuilder) WithGcpVmOIDC(clientConfig *idaasconfig.IDaaSClientConfig, aapArn string) *DefaultSecretManagerClientBuilder {
+	dsb.mauthConfig = &mauthconfig.AuthConfig{
+		AuthMethod:        mauthconfig.GcpVmOIDC,
+		AapArn:            aapArn,
+		IDaaSClientConfig: clientConfig,
+	}
+	return dsb
+}
+
+// WithGcpVmOIDCPath 使用GCP VM OIDC配置认证信息（配置文件路径版本）
+// 参数configPath为IDaaS配置文件路径；为空时走IDaaS原生默认读取逻辑
+// 参数aapArn为应用访问点ARN
+// 返回构建器本身以支持链式调用
+func (dsb *DefaultSecretManagerClientBuilder) WithGcpVmOIDCPath(configPath, aapArn string) *DefaultSecretManagerClientBuilder {
+	dsb.mauthConfig = &mauthconfig.AuthConfig{
+		AuthMethod:      mauthconfig.GcpVmOIDC,
+		AapArn:          aapArn,
+		IDaaSConfigPath: configPath,
+	}
+	return dsb
+}
+
+// WithGcpGkeOIDC 使用GCP GKE OIDC配置认证信息（对象版本）
+// 参数clientConfig为IDaaS客户端配置对象
+// 参数aapArn为应用访问点ARN
+// 返回构建器本身以支持链式调用
+func (dsb *DefaultSecretManagerClientBuilder) WithGcpGkeOIDC(clientConfig *idaasconfig.IDaaSClientConfig, aapArn string) *DefaultSecretManagerClientBuilder {
+	dsb.mauthConfig = &mauthconfig.AuthConfig{
+		AuthMethod:        mauthconfig.GcpGkeOIDC,
+		AapArn:            aapArn,
+		IDaaSClientConfig: clientConfig,
+	}
+	return dsb
+}
+
+// WithGcpGkeOIDCPath 使用GCP GKE OIDC配置认证信息（配置文件路径版本）
+// 参数configPath为IDaaS配置文件路径；为空时走IDaaS原生默认读取逻辑
+// 参数aapArn为应用访问点ARN
+// 返回构建器本身以支持链式调用
+func (dsb *DefaultSecretManagerClientBuilder) WithGcpGkeOIDCPath(configPath, aapArn string) *DefaultSecretManagerClientBuilder {
+	dsb.mauthConfig = &mauthconfig.AuthConfig{
+		AuthMethod:      mauthconfig.GcpGkeOIDC,
+		AapArn:          aapArn,
+		IDaaSConfigPath: configPath,
+	}
+	return dsb
+}
+
+// WithAzureVmOIDC 使用Azure VM OIDC配置认证信息（对象版本）
+// 参数clientConfig为IDaaS客户端配置对象
+// 参数aapArn为应用访问点ARN
+// 返回构建器本身以支持链式调用
+func (dsb *DefaultSecretManagerClientBuilder) WithAzureVmOIDC(clientConfig *idaasconfig.IDaaSClientConfig, aapArn string) *DefaultSecretManagerClientBuilder {
+	dsb.mauthConfig = &mauthconfig.AuthConfig{
+		AuthMethod:        mauthconfig.AzureVmOIDC,
+		AapArn:            aapArn,
+		IDaaSClientConfig: clientConfig,
+	}
+	return dsb
+}
+
+// WithAzureVmOIDCPath 使用Azure VM OIDC配置认证信息（配置文件路径版本）
+// 参数configPath为IDaaS配置文件路径；为空时走IDaaS原生默认读取逻辑
+// 参数aapArn为应用访问点ARN
+// 返回构建器本身以支持链式调用
+func (dsb *DefaultSecretManagerClientBuilder) WithAzureVmOIDCPath(configPath, aapArn string) *DefaultSecretManagerClientBuilder {
+	dsb.mauthConfig = &mauthconfig.AuthConfig{
+		AuthMethod:      mauthconfig.AzureVmOIDC,
+		AapArn:          aapArn,
+		IDaaSConfigPath: configPath,
+	}
+	return dsb
+}
+
+// WithAzureAksOIDC 使用Azure AKS OIDC配置认证信息（对象版本）
+// 参数clientConfig为IDaaS客户端配置对象
+// 参数aapArn为应用访问点ARN
+// 返回构建器本身以支持链式调用
+func (dsb *DefaultSecretManagerClientBuilder) WithAzureAksOIDC(clientConfig *idaasconfig.IDaaSClientConfig, aapArn string) *DefaultSecretManagerClientBuilder {
+	dsb.mauthConfig = &mauthconfig.AuthConfig{
+		AuthMethod:        mauthconfig.AzureAksOIDC,
+		AapArn:            aapArn,
+		IDaaSClientConfig: clientConfig,
+	}
+	return dsb
+}
+
+// WithAzureAksOIDCPath 使用Azure AKS OIDC配置认证信息（配置文件路径版本）
+// 参数configPath为IDaaS配置文件路径；为空时走IDaaS原生默认读取逻辑
+// 参数aapArn为应用访问点ARN
+// 返回构建器本身以支持链式调用
+func (dsb *DefaultSecretManagerClientBuilder) WithAzureAksOIDCPath(configPath, aapArn string) *DefaultSecretManagerClientBuilder {
+	dsb.mauthConfig = &mauthconfig.AuthConfig{
+		AuthMethod:      mauthconfig.AzureAksOIDC,
+		AapArn:          aapArn,
+		IDaaSConfigPath: configPath,
+	}
+	return dsb
+}
+
+// WithGenericKubernetesOIDC 使用Generic Kubernetes OIDC配置认证信息（对象版本）
+// 参数clientConfig为IDaaS客户端配置对象
+// 参数aapArn为应用访问点ARN
+// 返回构建器本身以支持链式调用
+func (dsb *DefaultSecretManagerClientBuilder) WithGenericKubernetesOIDC(clientConfig *idaasconfig.IDaaSClientConfig, aapArn string) *DefaultSecretManagerClientBuilder {
+	dsb.mauthConfig = &mauthconfig.AuthConfig{
+		AuthMethod:        mauthconfig.GenericKubernetesOIDC,
+		AapArn:            aapArn,
+		IDaaSClientConfig: clientConfig,
+	}
+	return dsb
+}
+
+// WithGenericKubernetesOIDCPath 使用Generic Kubernetes OIDC配置认证信息（配置文件路径版本）
+// 参数configPath为IDaaS配置文件路径；为空时走IDaaS原生默认读取逻辑
+// 参数aapArn为应用访问点ARN
+// 返回构建器本身以支持链式调用
+func (dsb *DefaultSecretManagerClientBuilder) WithGenericKubernetesOIDCPath(configPath, aapArn string) *DefaultSecretManagerClientBuilder {
+	dsb.mauthConfig = &mauthconfig.AuthConfig{
+		AuthMethod:      mauthconfig.GenericKubernetesOIDC,
+		AapArn:          aapArn,
+		IDaaSConfigPath: configPath,
+	}
+	return dsb
+}
+
 // Build 构建SecretManager客户端
 // 根据已设置的配置参数创建并返回SecretManagerClient实例
 // 返回实现SecretManagerClient接口的对象
@@ -283,7 +466,7 @@ func (dmc *defaultSecretManagerClient) Init() error {
 		}
 		return nil
 	}
-	if dmc.regionInfos != nil && len(dmc.regionInfos) > 1 {
+	if len(dmc.regionInfos) > 1 {
 		dmc.regionInfos = dmc.sortRegionInfos(dmc.regionInfos)
 	}
 	for _, regionInfo := range dmc.regionInfos {

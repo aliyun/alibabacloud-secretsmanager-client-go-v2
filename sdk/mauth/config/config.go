@@ -3,6 +3,8 @@ package config
 import (
 	"fmt"
 	"os"
+
+	idaasconfig "github.com/cloud-idaas/idaas-go-core-sdk/config"
 )
 
 // AuthConfig 认证配置
@@ -22,12 +24,24 @@ type AuthConfig struct {
 	// KmsEndpoint KMS端点
 	KmsEndpoint string `json:"KmsEndpoint,omitempty"`
 	Ca          string `json:"Ca,omitempty"`
+	// IDaaSConfigPath IDaaS 配置文件路径
+	IDaaSConfigPath string `json:"IDaaSConfigPath,omitempty"`
+	// IDaaSClientConfig IDaaS 客户端配置对象（直接传对象时优先使用）
+	IDaaSClientConfig *idaasconfig.IDaaSClientConfig `json:"-"`
 }
 
 const (
 	ECSInstanceIdentity = "ECSInstanceIdentity"
 	ACKOidcJwt          = "ACKOidcJwt"
 	ClientKey           = "ClientKey"
+
+	AwsEc2PKCS7           = "AwsEc2PKCS7"
+	AwsEksOIDC            = "AwsEksOIDC"
+	GcpVmOIDC             = "GcpVmOIDC"
+	GcpGkeOIDC            = "GcpGkeOIDC"
+	AzureVmOIDC           = "AzureVmOIDC"
+	AzureAksOIDC          = "AzureAksOIDC"
+	GenericKubernetesOIDC = "GenericKubernetesOIDC"
 )
 
 /*
@@ -49,9 +63,18 @@ func (c *AuthConfig) Validate() error {
 	// 检查不同认证方式的特定要求
 	switch c.AuthMethod {
 	case ACKOidcJwt:
+		if c.AapArn == "" {
+			return fmt.Errorf("AapArn is required for ACK OIDC JWT authentication")
+		}
 	case ECSInstanceIdentity:
+		if c.AapArn == "" {
+			return fmt.Errorf("AapArn is required for ECS Instance Identity authentication")
+		}
+	case AwsEc2PKCS7, AwsEksOIDC, GcpVmOIDC, GcpGkeOIDC, AzureVmOIDC, AzureAksOIDC, GenericKubernetesOIDC:
+		if c.AapArn == "" {
+			return fmt.Errorf("AapArn is required for multi-cloud authentication")
+		}
 	case ClientKey:
-		// Client Key 认证不需要 AAP ID
 		// ClientKeyConfigPath 不为空时，需要校验文件是否存在
 		if c.ClientKeyConfigPath == "" {
 			return fmt.Errorf("ClientKeyConfigPath is required for Client Key authentication")

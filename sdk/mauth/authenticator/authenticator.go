@@ -3,11 +3,15 @@ package authenticator
 import (
 	"context"
 	"fmt"
+	"time"
+
+	mauthconfig "github.com/aliyun/alibabacloud-secretsmanager-client-go-v2/sdk/mauth/config"
 )
 
 type Identity struct {
 	IdentityType  string
 	IdentityValue string
+	ExpiresAt     time.Time
 }
 
 type Authenticator interface {
@@ -24,7 +28,7 @@ func NewAuthenticatorManager(config Config) (Authenticator, error) {
 	var authenticator Authenticator
 
 	switch config.AuthMethod {
-	case ACKOidcJwt:
+	case mauthconfig.ACKOidcJwt:
 		tokenPath := config.TokenPath
 		// 默认 ack token path
 		if tokenPath == "" {
@@ -33,8 +37,16 @@ func NewAuthenticatorManager(config Config) (Authenticator, error) {
 		authenticator = &AckOIDCAuthenticator{
 			TokenPath: tokenPath,
 		}
-	case ECSInstanceIdentity:
+	case mauthconfig.ECSInstanceIdentity:
 		authenticator = &ECSAuthenticator{}
+	case mauthconfig.AwsEc2PKCS7, mauthconfig.AwsEksOIDC, mauthconfig.GcpVmOIDC, mauthconfig.GcpGkeOIDC, mauthconfig.AzureVmOIDC, mauthconfig.AzureAksOIDC, mauthconfig.GenericKubernetesOIDC:
+		auth := &IDaaSAuthenticator{IDaaSConfigPath: config.IDaaSConfigPath}
+		if config.IDaaSClientConfig != nil {
+			auth.getTokenFunc = func() (string, error) {
+				return getOauthTokenFromConfig(config.IDaaSClientConfig)
+			}
+		}
+		authenticator = auth
 	default:
 		return nil, fmt.Errorf("unsupported authentication method: %s", config.AuthMethod)
 	}
