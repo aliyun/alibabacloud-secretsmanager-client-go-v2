@@ -51,7 +51,7 @@ func TestRegionInfoExtend_ToString(t *testing.T) {
 		Reachable:  true,
 	}
 
-	expected := "RegionInfoExtend{RegionInfo: RegionInfo{RegionId: cn-hangzhou, Vpc: false, Endpoint: kms.cn-hangzhou.aliyuncs.com, CaFilePath: /path/to/ca.pem}, Escaped: 100.500000, Reachable: true}"
+	expected := "RegionInfoExtend{RegionInfo: RegionInfo{RegionId: cn-hangzhou, Vpc: false, Endpoint: kms.cn-hangzhou.aliyuncs.com, CaFilePath: /path/to/ca.pem}, Elapsed: 100.500000, Reachable: true}"
 	actual := regionInfoExtend.ToString()
 	assert.Equal(t, expected, actual, "ToString should return correct string representation for RegionInfoExtend")
 

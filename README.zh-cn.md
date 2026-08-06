@@ -17,7 +17,7 @@
 
 ## 软件要求
 
-- Go 1.10 或以上版本
+- Go 1.18 或以上版本
 
 ## 安装
 
@@ -273,6 +273,88 @@ func main() {
 }
 ```
 
+* 通过多云IDaaS方式构建客户端
+
+支持的多云认证子类型及对应 Builder 方法：
+- 对象版本：`WithAwsEc2PKCS7`、`WithAwsEksOIDC`、`WithGcpVmOIDC`、`WithGcpGkeOIDC`、`WithAzureVmOIDC`、`WithAzureAksOIDC`、`WithGenericKubernetesOIDC`
+- 配置文件路径版本：`WithAwsEc2PKCS7Path`、`WithAwsEksOIDCPath`、`WithGcpVmOIDCPath`、`WithGcpGkeOIDCPath`、`WithAzureVmOIDCPath`、`WithAzureAksOIDCPath`、`WithGenericKubernetesOIDCPath`
+
+以下以 AWS EC2 PKCS7 为例，分别展示对象版本和配置文件路径版本：
+
+**对象版本：**
+
+```go
+package main
+
+import (
+  "github.com/aliyun/alibabacloud-secretsmanager-client-go-v2/sdk"
+  "github.com/aliyun/alibabacloud-secretsmanager-client-go-v2/sdk/service"
+  idaasconfig "github.com/cloud-idaas/idaas-go-core-sdk/config"
+)
+
+func main() {
+  cfg := &idaasconfig.IDaaSClientConfig{
+    ClientId:       "#clientId#",
+    InstanceId:     "#instanceId#",
+    IssuerEndpoint: "#issuerEndpoint#",
+    TokenEndpoint:  "#tokenEndpoint#",
+    Scope:          "#scope#",
+    AuthnConfiguration: &idaasconfig.IdentityAuthenticationConfiguration{
+      AuthnMethod:                        "#authnMethod#",
+      IdentityType:                       "#identityType#",
+      ApplicationFederatedCredentialName: "#applicationFederatedCredentialName#",
+      ClientDeployEnvironment:            "#clientDeployEnvironment#",
+    },
+  }
+  client, err := sdk.NewSecretCacheClientBuilder(
+    service.NewDefaultSecretManagerClientBuilder().Standard().
+      WithAwsEc2PKCS7(cfg, "#aapArn#").
+      WithRegion("#regionId#").Build()).Build()
+  if err != nil {
+    // Handle exceptions
+    panic(err)
+  }
+  secretInfo, err := client.GetSecretInfo("#secretName#")
+  if err != nil {
+    // Handle exceptions
+    panic(err)
+  }
+}
+```
+
+**配置文件路径版本：**
+
+```go
+package main
+
+import (
+  "github.com/aliyun/alibabacloud-secretsmanager-client-go-v2/sdk"
+  "github.com/aliyun/alibabacloud-secretsmanager-client-go-v2/sdk/service"
+)
+
+func main() {
+  client, err := sdk.NewSecretCacheClientBuilder(
+    service.NewDefaultSecretManagerClientBuilder().Standard().
+      WithAwsEc2PKCS7Path("#idaasConfigPath#", "#aapArn#").
+      WithRegion("#regionId#").Build()).Build()
+  if err != nil {
+    // Handle exceptions
+    panic(err)
+  }
+  secretInfo, err := client.GetSecretInfo("#secretName#")
+  if err != nil {
+    // Handle exceptions
+    panic(err)
+  }
+}
+```
+
+> **注意：**
+> - 对象版本：直接通过 `WithAwsEc2PKCS7` 等方法传入 `*idaasconfig.IDaaSClientConfig` 配置对象。
+> - 配置文件路径版本：通过 `WithAwsEc2PKCS7Path` 等方法传入 IDaaS `client-config.json` 配置文件路径；传空字符串 `""` 时走 IDaaS SDK 原生默认读取逻辑（优先级：`CLOUD_IDAAS_CONFIG_PATH` 环境变量 → `~/.cloud_idaas/client-config.json` → 独立环境变量）。
+> - `#aapArn#` 为应用访问点 ARN，用于通过 `IssueTemporaryCredential` 换取临时 ClientKey。
+> - 支持的多云认证子类型：`AwsEc2PKCS7`、`AwsEksOIDC`、`GcpVmOIDC`、`GcpGkeOIDC`、`AzureVmOIDC`、`AzureAksOIDC`、`GenericKubernetesOIDC`。
+
 ## 常见问题 FAQ
 
 ### 1. 出现 "cannot find the built-in ca certificate for region[$regionId], please provide the caFilePath parameter." 错误怎么办？
@@ -333,3 +415,10 @@ cache_client_region_id=[{"regionId":"<regionId>","endpoint":"<kmsInstanceId>.cry
 # 关联的KMS服务地域，包含CA证书路径和实例地址
 cache_client_region_id=[{"regionId":"<regionId>","endpoint":"<kmsInstanceId>.cryptoservice.kms.aliyuncs.com","caFilePath":"<ca证书文件路径>"}]
 ```
+
+### 2. IDaaS 配置文件是如何加载的？
+
+`configPath` 传入空字符串 `""` 时，IDaaS SDK 启用原生默认读取逻辑，按以下优先级加载 `client-config.json`：
+
+1. **环境变量**：`CLOUD_IDAAS_CONFIG_PATH` 环境变量指定的路径。
+2. **默认路径**：`~/.cloud_idaas/client-config.json`。

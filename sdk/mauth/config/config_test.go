@@ -138,3 +138,25 @@ func TestAuthConfig_Validate_EmptyAuthMethod(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.Contains(t, err.Error(), "AuthMethod is required")
 }
+
+func TestAuthConfig_Validate_MultiCloudIDaaS_Success(t *testing.T) {
+	cfg := &AuthConfig{
+		AuthMethod:  AwsEc2PKCS7,
+		AapArn:      "arn:test:aap",
+		KmsEndpoint: "https://kms.cn-hangzhou.aliyuncs.com",
+	}
+	err := cfg.Validate()
+	assert.Nil(t, err)
+
+	cfg.AuthMethod = AwsEksOIDC
+	err = cfg.Validate()
+	assert.Nil(t, err)
+
+	cfg.AuthMethod = GcpVmOIDC
+	err = cfg.Validate()
+	assert.Nil(t, err)
+
+	cfg.AuthMethod = GenericKubernetesOIDC
+	err = cfg.Validate()
+	assert.Nil(t, err)
+}

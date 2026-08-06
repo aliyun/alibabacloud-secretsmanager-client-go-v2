@@ -90,6 +90,24 @@ func IsValidJWTFile(filePath string) bool {
 	return IsValidJWT(token)
 }
 
+// 校验是不是 json
+func IsJSONFile(filePath string) bool {
+	_, err := os.Stat(filePath)
+	if os.IsNotExist(err) {
+		return false
+	}
+	fileBytes, err := os.ReadFile(filePath)
+	if err != nil {
+		return false
+	}
+	var js map[string]interface{}
+	err = json.Unmarshal(fileBytes, &js)
+	if err != nil {
+		return false
+	}
+	return true
+}
+
 // GetJWTExpiration 获取 JWT 的过期时间
 func GetJWTExpiration(token string) (time.Time, error) {
 	claims, err := ParseJWTClaims(token)

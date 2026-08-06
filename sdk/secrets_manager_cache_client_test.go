@@ -34,6 +34,8 @@ func TestNewSecretCacheClient(t *testing.T) {
 }
 
 func TestSecretCacheClient_GetSecretInfo(t *testing.T) {
+	t.Skip("Integration test requires real KMS instance and credentials")
+
 	regionId := "cn-hangzhou"
 	jsonTTLPropertyName := "ttl"
 	secretName := "cache_client"
@@ -62,6 +64,8 @@ func TestSecretCacheClient_GetSecretInfo(t *testing.T) {
 }
 
 func TestSecretCacheClient_RefreshNow(t *testing.T) {
+	t.Skip("Integration test requires real KMS instance and credentials")
+
 	regionId := "cn-hangzhou"
 	jsonTTLPropertyName := "ttl"
 	secretName := "cache_client"

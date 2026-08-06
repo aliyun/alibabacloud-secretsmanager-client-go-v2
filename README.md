@@ -16,7 +16,7 @@ The Alibaba Cloud Secrets Manager Client V2 for Go enables Go developers to easi
 
 ## Requirements
 
-- You must use Go 1.10.x or later.
+- You must use Go 1.18.x or later.
 
 ## Installation
 
@@ -277,6 +277,88 @@ func main() {
 }
 ```
 
+* Build Secrets Manager Client by Multi-Cloud IDaaS
+
+Supported multi-cloud authentication subtypes and corresponding builder methods:
+- Object version: `WithAwsEc2PKCS7`, `WithAwsEksOIDC`, `WithGcpVmOIDC`, `WithGcpGkeOIDC`, `WithAzureVmOIDC`, `WithAzureAksOIDC`, `WithGenericKubernetesOIDC`
+- Config file path version: `WithAwsEc2PKCS7Path`, `WithAwsEksOIDCPath`, `WithGcpVmOIDCPath`, `WithGcpGkeOIDCPath`, `WithAzureVmOIDCPath`, `WithAzureAksOIDCPath`, `WithGenericKubernetesOIDCPath`
+
+The following example uses AWS EC2 PKCS7 to demonstrate both the object version and the config file path version:
+
+**Object version:**
+
+```go
+package main
+
+import (
+	"github.com/aliyun/alibabacloud-secretsmanager-client-go-v2/sdk"
+	"github.com/aliyun/alibabacloud-secretsmanager-client-go-v2/sdk/service"
+	idaasconfig "github.com/cloud-idaas/idaas-go-core-sdk/config"
+)
+
+func main() {
+	cfg := &idaasconfig.IDaaSClientConfig{
+		ClientId:       "#clientId#",
+		InstanceId:     "#instanceId#",
+		IssuerEndpoint: "#issuerEndpoint#",
+		TokenEndpoint:  "#tokenEndpoint#",
+		Scope:          "#scope#",
+		AuthnConfiguration: &idaasconfig.IdentityAuthenticationConfiguration{
+			AuthnMethod:                        "#authnMethod#",
+			IdentityType:                       "#identityType#",
+			ApplicationFederatedCredentialName: "#applicationFederatedCredentialName#",
+			ClientDeployEnvironment:            "#clientDeployEnvironment#",
+		},
+	}
+	client, err := sdk.NewSecretCacheClientBuilder(
+		service.NewDefaultSecretManagerClientBuilder().Standard().
+			WithAwsEc2PKCS7(cfg, "#aapArn#").
+			WithRegion("#regionId#").Build()).Build()
+	if err != nil {
+		// Handle exceptions
+		panic(err)
+	}
+	secretInfo, err := client.GetSecretInfo("#secretName#")
+	if err != nil {
+		// Handle exceptions
+		panic(err)
+	}
+}
+```
+
+**Config file path version:**
+
+```go
+package main
+
+import (
+	"github.com/aliyun/alibabacloud-secretsmanager-client-go-v2/sdk"
+	"github.com/aliyun/alibabacloud-secretsmanager-client-go-v2/sdk/service"
+)
+
+func main() {
+	client, err := sdk.NewSecretCacheClientBuilder(
+		service.NewDefaultSecretManagerClientBuilder().Standard().
+			WithAwsEc2PKCS7Path("#idaasConfigPath#", "#aapArn#").
+			WithRegion("#regionId#").Build()).Build()
+	if err != nil {
+		// Handle exceptions
+		panic(err)
+	}
+	secretInfo, err := client.GetSecretInfo("#secretName#")
+	if err != nil {
+		// Handle exceptions
+		panic(err)
+	}
+}
+```
+
+> **Note:**
+> - Object version: pass `*idaasconfig.IDaaSClientConfig` directly via builder methods like `WithAwsEc2PKCS7`.
+> - Config file path version: pass the path to the IDaaS `client-config.json` via builder methods like `WithAwsEc2PKCS7Path`. Pass an empty string `""` to enable the IDaaS SDK native default loading logic (priority: `CLOUD_IDAAS_CONFIG_PATH` env var → `~/.cloud_idaas/client-config.json` → standalone env vars).
+> - `#aapArn#` is the Application Access Point ARN, used to exchange for a temporary ClientKey via `IssueTemporaryCredential`.
+> - Supported multi-cloud authentication subtypes: `AwsEc2PKCS7`, `AwsEksOIDC`, `GcpVmOIDC`, `GcpGkeOIDC`, `AzureVmOIDC`, `AzureAksOIDC`, `GenericKubernetesOIDC`.
+
 ## Frequently Asked Questions (FAQ)
 
 ### 1. What should I do if I encounter the error "cannot find the built-in ca certificate for region[$regionId], please provide the caFilePath parameter."?
@@ -332,3 +414,10 @@ Refer to [Environment Variable Configuration Description](README_environment.md)
 # The associated KMS service region, including the CA certificate path and instance address
 cache_client_region_id=[{"regionId":"<regionId>","endpoint":"<kmsInstanceId>.cryptoservice.kms.aliyuncs.com","caFilePath":"<ca certificate file path>"}]
 ```
+
+### 2. How does the IDaaS configuration file loading work?
+
+When `configPath` is an empty string `""`, the IDaaS SDK uses the native default loading logic to locate `client-config.json` in the following priority:
+
+1. **Environment variable**: The path specified by `CLOUD_IDAAS_CONFIG_PATH`.
+2. **Default path**: `~/.cloud_idaas/client-config.json`.

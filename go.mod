@@ -9,9 +9,9 @@ require (
 	github.com/alibabacloud-go/tea v1.3.10
 	github.com/alibabacloud-go/tea-utils/v2 v2.0.7
 	github.com/aliyun/credentials-go v1.4.5
+	github.com/cloud-idaas/idaas-go-core-sdk v0.1.0-alpha.3
 	github.com/deckarep/golang-set v1.7.1
 	github.com/orcaman/concurrent-map v0.0.0-20210501183033-44dafcb38ecc
 	github.com/stretchr/testify v1.7.1
 	golang.org/x/crypto v0.24.0
 )
-
