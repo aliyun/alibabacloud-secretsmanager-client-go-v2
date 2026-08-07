@@ -3,9 +3,11 @@ package authenticator
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/aliyun/alibabacloud-secretsmanager-client-go-v2/sdk/mauth/utils"
 	idaasconfig "github.com/cloud-idaas/idaas-go-core-sdk/config"
+	idaasenums "github.com/cloud-idaas/idaas-go-core-sdk/enums"
 	"github.com/cloud-idaas/idaas-go-core-sdk/factory"
 )
 
@@ -49,6 +51,8 @@ func GetOauthToken(idaasConfigPath string) (token string, err error) {
 }
 
 func getOauthTokenFromConfig(cfg *idaasconfig.IDaaSClientConfig) (token string, err error) {
+	normalizeIDaaSConfig(cfg)
+
 	factoryInstance := factory.GetInstance()
 	if !factoryInstance.IsInitialized() {
 		err = factoryInstance.Initialize(cfg)
@@ -68,4 +72,24 @@ func getOauthTokenFromConfig(cfg *idaasconfig.IDaaSClientConfig) (token string, 
 	}
 
 	return cred.GetAccessToken(), nil
+}
+
+// normalizeIDaaSConfig 对 IDaaS 配置对象进行大小写归一化。
+// 由于 idaas-go-core-sdk 仅在 JSON 反序列化时通过 UnmarshalJSON 做归一化，
+// 对象直接赋值方式会跳过该逻辑，导致枚举值大小写不匹配。
+// 此函数补齐对象方式的归一化，使行为与文件加载方式保持一致。
+func normalizeIDaaSConfig(cfg *idaasconfig.IDaaSClientConfig) {
+	if cfg == nil || cfg.AuthnConfiguration == nil {
+		return
+	}
+	authn := cfg.AuthnConfiguration
+	if authn.AuthnMethod != "" {
+		authn.AuthnMethod = idaasenums.TokenAuthnMethod(strings.ToLower(string(authn.AuthnMethod)))
+	}
+	if authn.IdentityType != "" {
+		authn.IdentityType = idaasenums.AuthenticationIdentityEnum(strings.ToUpper(string(authn.IdentityType)))
+	}
+	if authn.ClientDeployEnvironment != "" {
+		authn.ClientDeployEnvironment = idaasenums.ClientDeployEnvironmentEnum(strings.ToUpper(string(authn.ClientDeployEnvironment)))
+	}
 }

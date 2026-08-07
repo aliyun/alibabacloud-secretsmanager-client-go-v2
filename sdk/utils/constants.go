@@ -146,7 +146,7 @@ const (
 	ModeName = "SecretsManagerClientV2"
 
 	// ProjectVersion 项目版本
-	ProjectVersion = "2.0.2"
+	ProjectVersion = "2.0.3"
 
 	// CredentialsPropertiesConfigName 凭据配置文件名称
 	CredentialsPropertiesConfigName = "secretsmanager.properties"
